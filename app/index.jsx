@@ -1,5 +1,5 @@
-import { StyleSheet, Animated, Text, View, TouchableOpacity } from "react-native";
-import React, { useState, useEffect } from "react";
+import { StyleSheet, Animated, Text, View } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
 import Schedule from "./components/Schedule";
 import ConfirmButton from "./components/ConfirmButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -74,7 +74,7 @@ const Home = () => {
 
                         }
                     } else {
-                        
+
                         setAlarm(today.getHours() > scheduleResult && true)
                         setProgressColor(colorDifference)
                     }
@@ -85,14 +85,41 @@ const Home = () => {
         })
     }, [])
 
-    const [activeIndex, setindex] = useState(0);
+    const animation = useRef(new Animated.Value(0)).current;
+    const colors = ["blue", "orange"]
+
+    useEffect(() => {
+        const loopAnimation = Animated.loop(
+            Animated.timing(animation, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: false,
+            }),
+        );
+
+        loopAnimation.start();
+
+        return () => loopAnimation.stop();
+    }, [animation, 1000]);
+
+    const interpolatedColor = animation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [colors[0], colors[1]],
+    });
+
+    const textColorStyle = {
+        color: interpolatedColor,
+    };
+
+
     return (
         <>
             <AnimatedColorView
-                colors={alarm ? ["#ff8a9f"] : []}
+                colors={alarm ? ["#f54269", "#bf022c"] : []}
                 loop={true}
-                duration={200}
-                className="flex-1 items-center relative">
+                duration={500}
+                className="flex-1 items-center relative"
+            >
                 {schedule &&
                     <Schedule setSchedule={setSchedule} />
                 }
@@ -103,18 +130,34 @@ const Home = () => {
                         }
 
                         <View className="mt-[20rem]">
-                            <Text className={`text-[5rem] 
-                            ${alarm ? "text-red-300" : "text-gray-600"}
+                            {!party ?
+                                <>
+                                    <Text className={`text-[5rem] 
+                            ${alarm ? "text-red-800" : "text-gray-600"}
                             `}>
-                                {time}
-                            </Text>
+                                        {time}
+                                    </Text>
+
+                                    <ConfirmButton alarm={alarm} progressColor={progressColor} isConfirmed={isConfirmed} />
+                                </>
+                                :
+                                <>
+                                    <Animated.Text
+                                        className="text-[5rem] font-extrabold"
+                                        style={[textColorStyle]}>
+                                        YOU
+                                    </Animated.Text>
+                                    <Animated.Text
+                                        className="text-[5rem] font-extrabold"
+                                        style={[textColorStyle]}>
+                                        DID!!!!!
+                                    </Animated.Text>
+                                </>
+                            }
                         </View>
-
-                        <ConfirmButton alarm={alarm} progressColor={progressColor} isConfirmed={isConfirmed} />
-
                         <View className="absolute bottom-10">
                             <Text className="font-bold">
-                                in {remainingHours} hours
+                                in {remainingHours} hours {alarm && "more"}
                             </Text>
                         </View>
 
